@@ -14,28 +14,31 @@ const DEFAULTS = {
 
 /**
  * @param {String} keyspace The keyspace to operate on
- * @param {Array} hosts hostnames of cassandra servers
+ * @param {Array} contactPoints hostnames of cassandra servers
  * @param {Object} options [optional] Any other client options as defined in http://www.datastax.com/drivers/nodejs/2.0/global.html#ClientOptions
  */
 
-function Adapter(keyspace, hosts, options = {}) {
-	var _key = keyspace + hosts;
-	if (adapters[_key])
-		return adapters[_key];
+function Adapter(keyspace, contactPoints, options = {}) {
+	var hosts = contactPoints.sort().toString();
+
+	adapters[hosts] = adapters[hosts] || {};
+
+	if (adapters[hosts][keyspace])
+		return adapters[hosts][keyspace];
 
 	if (!(this instanceof Adapter))
-		return new Adapter(keyspace, hosts);
+		return new Adapter(keyspace, contactPoints);
 
 	this.client = new driver.Client({
 		...DEFAULTS,
 		...options,
 		keyspace,
-		contactPoints: hosts
+		contactPoints
 	});
 
 	// this.client.on('log', (level, className, message) => console.log('Cassandra %s: %s', level, message));
 
-	adapters[_key] = this;
+	adapters[hosts][keyspace] = this;
 }
 
 
